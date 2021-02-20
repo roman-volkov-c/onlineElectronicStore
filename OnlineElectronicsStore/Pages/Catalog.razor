@@ -1,0 +1,63 @@
+﻿@page "/каталог/{subcatalog?}"
+@inject SearchService SearchService
+@implements IDisposable
+
+<div class="container-fluid p-0">
+    <div class="row row-cols-1 row-cols-lg-2 row-cols-xxl-3 g-3 text-center align-items-center">
+        @if (cards is null)
+        {
+            <NotFound />
+        }
+        else
+        {
+            @foreach (ICardContent card in cards)
+            {
+                <div class="col">
+                    <div class="card">
+                        <a href="@("каталог/" + (paretnGroup is null ? null : $"{paretnGroup.Name}/") + card.Name)">
+                            <div class="card-img-wrapper">
+                                <img src="@card.PathToImage" class="card-img-top" />
+                            </div>
+                        </a>
+                        <div class="card-body">
+                            <h5 class="card-title">@card.Name</h5>
+                            <p class="card-text">@card.Description</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Subcatalog { get; set; }
+    private IEnumerable<ICardContent>? cards;
+    private GroupOfItems? paretnGroup;
+
+    public void Dispose()
+    {
+        Search.AllowedValues = Array.Empty<string>();
+        Search.ReRenderNavMenu?.Invoke(); // TODO: При выходе вылетает исключение, переделать
+    }
+    protected override void OnParametersSet()
+    {
+        GroupOfItems[] groupsOfItems = SearchService.GroupsOfItems.ToArray();
+        paretnGroup = null;
+        cards = null;
+
+        if (Subcatalog is null)
+        {
+            cards = groupsOfItems;
+        }
+        else if (groupsOfItems.SingleOrDefault(x => x.Name == Subcatalog) is var groupOfItems and not null)
+        {
+            cards = groupOfItems.Items;
+            paretnGroup = groupOfItems;
+        }
+
+        Search.AllowedValues = cards?.Select(x => x.Name).ToArray() ?? Array.Empty<string>();
+        Search.ReRenderNavMenu?.Invoke();
+    }
+}
