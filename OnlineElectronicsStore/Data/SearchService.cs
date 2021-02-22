@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace OnlineElectronicsStore.Data
 {
     public class SearchService
     {
-        public readonly IEnumerable<GroupOfItems> GroupsOfItems = new GroupOfItems[]
+        public readonly GroupOfProducts[] GroupsOfItems =
         {
             new()
             {
                 Name = "компьютеры",
                 PathToImage = "Catalogs/Computers/Computer.jpg",
-                Items = new GroupOfItems.Item[]
+                Products = new GroupOfProducts.Product[]
                 {
                     new()
                     {
@@ -51,25 +50,21 @@ namespace OnlineElectronicsStore.Data
         };
     }
 
-    public interface ICardContent
+    public class ProductCard
     {
-        string Name { get; init; }
-        string Description { get; init; }
-        string PathToImage { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public string PathToImage { get; init; } = string.Empty;
     }
 
-    public class GroupOfItems : ICardContent
+    public class GroupOfProducts : ProductCard
     {
-        public class Item : ICardContent
+        public class Product : ProductCard
         {
-            public string Name { get; init; }
-            public string Description { get; init; }
-            public string PathToImage { get; init; }
+
         }
 
-        public string Name { get; init; }
-        public string Description { get; init; } = "Текст";
-        public string PathToImage { get; init; }
-        public IEnumerable<Item> Items { get; init; } = Array.Empty<Item>();
+        public GroupOfProducts() => Description = "Текст";
+        public Product[] Products { get; init; } = Array.Empty<Product>();
     }
 }

@@ -1,63 +1,61 @@
-﻿@page "/каталог/{subcatalog?}"
+﻿@page "/каталог/{groupofproducts?}/{product?}"
 @inject SearchService SearchService
 @implements IDisposable
 
-<div class="container-fluid p-0">
+
+@if (Product is not null && currentProduct is null || cards is null)
+{
+    <NotFound />
+}
+else if (currentProduct is null)
+{
     <div class="row row-cols-1 row-cols-lg-2 row-cols-xxl-3 g-3 text-center align-items-center">
-        @if (cards is null)
+        @foreach (ProductCard card in cards)
         {
-            <NotFound />
-        }
-        else
-        {
-            @foreach (ICardContent card in cards)
-            {
-                <div class="col">
-                    <div class="card">
-                        <a href="@("каталог/" + (paretnGroup is null ? null : $"{paretnGroup.Name}/") + card.Name)">
-                            <div class="card-img-wrapper">
-                                <img src="@card.PathToImage" class="card-img-top" />
-                            </div>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">@card.Name</h5>
-                            <p class="card-text">@card.Description</p>
+            <div class="col">
+                <div class="card">
+                    <a href="@("каталог/" + (currentGroupOfProducts is null ? null : $"{currentGroupOfProducts.Name}/") + card.Name)">
+                        <div class="card-img-wrapper">
+                            <img src="@card.PathToImage" class="card-img-top" />
                         </div>
+                    </a>
+                    <div class="card-body">
+                        <h5 class="card-title">@card.Name</h5>
+                        <p class="card-text">@card.Description</p>
                     </div>
                 </div>
-            }
+            </div>
         }
     </div>
-</div>
+}
+else
+{
+    @* TODO: Отобразить страницу товара *@
+}
 
 @code {
     [Parameter]
-    public string? Subcatalog { get; set; }
-    private IEnumerable<ICardContent>? cards;
-    private GroupOfItems? paretnGroup;
+    public string? GroupOfProducts { get; set; }
+    [Parameter]
+    public string? Product { get; set; }
+
+    private ProductCard[]? cards;
+    private GroupOfProducts? currentGroupOfProducts;
+    private GroupOfProducts.Product? currentProduct;
 
     public void Dispose()
     {
-        Search.AllowedValues = Array.Empty<string>();
-        Search.ReRenderNavMenu?.Invoke(); // TODO: При выходе вылетает исключение, переделать
+        NavMenuRedirectBar.AllowedValues = Array.Empty<string>();
+        NavMenuRedirectBar.RequestRerenderOfNavMenu();
     }
     protected override void OnParametersSet()
     {
-        GroupOfItems[] groupsOfItems = SearchService.GroupsOfItems.ToArray();
-        paretnGroup = null;
-        cards = null;
+        GroupOfProducts[] groupsOfProducts = SearchService.GroupsOfItems;
+        currentGroupOfProducts = groupsOfProducts.SingleOrDefault(x => x.Name == GroupOfProducts);
+        currentProduct = currentGroupOfProducts?.Products.SingleOrDefault(x => x.Name == Product);
+        cards = GroupOfProducts is null ? groupsOfProducts : currentGroupOfProducts?.Products;
 
-        if (Subcatalog is null)
-        {
-            cards = groupsOfItems;
-        }
-        else if (groupsOfItems.SingleOrDefault(x => x.Name == Subcatalog) is var groupOfItems and not null)
-        {
-            cards = groupOfItems.Items;
-            paretnGroup = groupOfItems;
-        }
-
-        Search.AllowedValues = cards?.Select(x => x.Name).ToArray() ?? Array.Empty<string>();
-        Search.ReRenderNavMenu?.Invoke();
+        NavMenuRedirectBar.AllowedValues = currentProduct is null && cards is not null ? cards.Select(x => x.Name).ToArray() : Array.Empty<string>();
+        NavMenuRedirectBar.RequestRerenderOfNavMenu();
     }
 }

@@ -1,74 +1,71 @@
 ﻿@implements IDisposable
+@inject NavigationManager navigationManager
 
-<div class="container-fluid p-4 bg-dark">
-    <div class="row gy-3 align-items-center">
-        <div class="col-12 col-md-10 col-xl-6 col-xxl-7 order-1">
-            <ul class="nav nav-fill align-items-center">
-                <li class="nav-item">
-                    <NavLink href="" class="navbar-brand" Match="NavLinkMatch.All">
-                        NET &#10086; Store
-                    </NavLink>
-                </li>
-                <li class="nav-item">
-                    <NavLink href="" class="nav-link" Match="NavLinkMatch.All">Личный кабинет</NavLink>
-                </li>
-                <li class="nav-item">
-                    <NavLink href="каталог" class="nav-link">Каталог</NavLink>
-                </li>
-                <li class="nav-item">
-                    <NavLink href="о_нас" class="nav-link">О нас</NavLink>
-                </li>
-            </ul>
-        </div>
-
-        <div class="col-3 col-md-2 col-xxl-1 order-3">
-            <button id="buy" class="btn btn-sm btn-outline-light text-truncate w-100">
-                <span>100 000 000</span>
-            </button>
-        </div>
-
-        <div class="col-9 col-md-8 col-xl-4 order-2 order-md-4 order-xl-2 mx-auto">
-            <EditForm Model="@search" OnValidSubmit="@Scroll" OnInvalidSubmit="ShowError" class="form-inline">
-                <DataAnnotationsValidator />
-                @*TODO: Переделать информирование пользователя об ошибках*@
-                <fieldset @attributes="attributes" class="w-100 position-relative">
-                    <div class="input-group">
-                        <InputText @bind-Value="search.Request" list="listOfAllowedValues" class="form-control" />
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-outline-@(Search.HasNotValues ? "danger" : "success")">Найти</button>
-                        </div>
+<div class="row gy-3 align-items-center">
+    <div class="col-12 col-md-10 col-xl-6 col-xxl-7 order-1">
+        <ul class="nav nav-fill align-items-center">
+            <li class="nav-item">
+                <NavLink href="" class="navbar-brand" Match="NavLinkMatch.All">
+                    NET &#10086; Store
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink href="" class="nav-link" Match="NavLinkMatch.All">Личный кабинет</NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink href="каталог" class="nav-link">Каталог</NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink href="о_нас" class="nav-link">О нас</NavLink>
+            </li>
+        </ul>
+    </div>
+    <div class="col-3 col-md-2 col-xxl-1 order-3">
+        <button id="buy" class="btn btn-sm btn-outline-light text-truncate w-100">
+            <span>100 000 000</span>
+        </button>
+    </div>
+    <div class="col-9 col-md-8 col-xl-4 order-2 order-md-4 order-xl-2 mx-auto">
+        <EditForm Model="@search" OnValidSubmit="@Redirect" OnInvalidSubmit="ShowError" class="form-inline">
+            <DataAnnotationsValidator />
+            <fieldset @attributes="attributes" class="w-100 position-relative">
+                <div class="input-group">
+                    <InputText @bind-Value="search.Request" list="listOfAllowedValues" class="form-control" />
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-outline-@(NavMenuRedirectBar.AllowedValues.Length is 0 ? "danger" : "success")">Найти</button>
                     </div>
-                    <div class="form-text position-absolute text-danger bg-white border border-danger rounded p-2 w-100 top-100 @errorDisplay">
-                        Данный раздел отсутствует
-                    </div>
-                </fieldset>
-
-                <datalist id="listOfAllowedValues">
-                    @foreach (var item in Search.AllowedValues)
-                    {
-                        <option value="@item" />
-                    }
-                </datalist>
-            </EditForm>
-        </div>
+                </div>
+                <div class="form-text position-absolute text-danger bg-white border border-danger rounded p-2 w-100 top-100 @errorDisplay">
+                    Данный раздел отсутствует
+                </div>
+            </fieldset>
+            <datalist id="listOfAllowedValues">
+                @foreach (var item in NavMenuRedirectBar.AllowedValues)
+                {
+                    <option value="@item" />
+                }
+            </datalist>
+        </EditForm>
     </div>
 </div>
 
 @code {
-    private Dictionary<string, object>? attributes => Search.HasNotValues ? new() { ["disabled"] = "disabled" } : null;
-    private Search search = new();
+    private Dictionary<string, object>? attributes => NavMenuRedirectBar.AllowedValues.Length is 0 ? new() { ["disabled"] = "disabled" } : null;
+    private NavMenuRedirectBar search = new();
     private string? errorDisplay = "d-none";
 
-    protected override void OnInitialized() => Search.ReRenderNavMenu = StateHasChanged;
-    public void Dispose() => Search.ReRenderNavMenu = null;
+    protected override void OnInitialized() => NavMenuRedirectBar.RerenderOfNavMenuRequired += StateHasChangedHandler;
+    public void Dispose() => NavMenuRedirectBar.RerenderOfNavMenuRequired -= StateHasChangedHandler;
+    private void StateHasChangedHandler() => InvokeAsync(() => StateHasChanged()).Wait();
     private async Task ShowError()
     {
         errorDisplay = null;
         await Task.Delay(2500);
         errorDisplay = "d-none";
     }
-    private void Scroll()
+    private void Redirect()
     {
-        // TODO: Доделать
+        navigationManager.NavigateTo(navigationManager.Uri + "/" + search.Request);
+        search.Request = "";
     }
 }
